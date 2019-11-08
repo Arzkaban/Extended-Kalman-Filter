@@ -69,7 +69,8 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   // pre-compute a set of terms to avoid repeated calculation
   float c1 = px*px+py*py;
   float c2 = sqrt(c1);
-  VectorXd z_pred << c2, atan2(py, px), (px*vx+py*vy)/c2;
+  VectorXd z_pred = VectorXd(3);
+  z_pred << c2, atan2(py, px), (px*vx+py*vy)/c2;
   VectorXd y = z - z_pred;
   while(y(1)>M_PI){
     y(1) = y(1) - 2* M_PI;

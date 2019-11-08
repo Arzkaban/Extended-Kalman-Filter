@@ -82,8 +82,12 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       // TODO: Convert radar from polar to cartesian coordinates 
       //         and initialize state.
       // Define y positive is pointed to left
-      VectorXd Pos = tools.Polor2Cartesian(measurement_pack.raw_measurements_)
-      ekf_.x_ << Pos[0], Pos[1], Pos[2], Pos[3];
+      double ro = measurement_pack.raw_measurements_[0];
+      double theta = measurement_pack.raw_measurements_[1];
+      double ro_dot = measurement_pack.raw_measurements_[2];
+
+      ekf_.x_ << ro * cos(theta),         ro * sin(theta),
+                 ro_dot * cos(theta), ro_dot * sin(theta);
 
     }
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
@@ -114,20 +118,20 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
    */
 
   // compute the time elapsed between the current and previous measurements
-  ekf_.delta_T = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0;
+  float delta_T = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0;
   previous_timestamp_ = measurement_pack.timestamp_;
 
-  float dt_2 = ekf_.delta_T * ekf_.delta_T;
-  float dt_3 = dt_2 * ekf_.delta_T;
-  float dt_4 = dt_3 * ekf_.delta_T;
+  float dt_2 = delta_T * delta_T;
+  float dt_3 = dt_2 * delta_T;
+  float dt_4 = dt_3 * delta_T;
 
   // Modify the F matrix so that the time is integrated
-  ekf_.F_(0, 2) = ekf_.delta_T;
-  ekf_.F_(1, 3) = ekf_.delta_T;
+  ekf_.F_(0, 2) = delta_T;
+  ekf_.F_(1, 3) = delta_T;
   
   // set the acceleration noise components
-  noise_ax = 9;
-  noise_ay = 9;
+  double noise_ax = 9;
+  double noise_ay = 9;
 
   // set the process covariance matrix Q
   ekf_.Q_ = MatrixXd(4, 4);
@@ -152,7 +156,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     // TODO: Radar updates
   ekf_.R_ = R_radar_;
   //  ????  using ekf_.x_ from prediction to calculate Hj?  or using raw measurement form this measurement circle????
-  ekf_.H_ = tools.CalculateJacobian(ekf_.x_); //tools.Polor2Cartesian(measurement_pack.raw_measurements_)
+  ekf_.H_ = tools.CalculateJacobian(ekf_.x_);
   ekf_.UpdateEKF(measurement_pack.raw_measurements_);
 
   } else {
